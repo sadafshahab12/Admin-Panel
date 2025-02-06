@@ -3,9 +3,9 @@
 
 import { client } from "@/sanity/lib/client";
 import { SignedIn, SignOutButton } from "@clerk/clerk-react";
-import { useUser } from "@clerk/nextjs";
+
 import { groq } from "next-sanity";
-import { useRouter } from "next/navigation";
+
 import React, { useEffect, useState } from "react";
 import { FaSquareCheck } from "react-icons/fa6";
 import { IoMdTrash } from "react-icons/io";
@@ -179,25 +179,8 @@ const AdminDashboard = () => {
     (order) => order.status === "pending"
   ).length;
 
-  const { user, isSignedIn } = useUser();
-  const router = useRouter();
-  const [isUserLoaded, setIsUserLoaded] = useState(false);
-  useEffect(() => {
-    if (isSignedIn && user) {
-      setIsUserLoaded(true);
-      if (
-        user &&
-        user.primaryEmailAddress?.emailAddress !==
-          process.env.NEXT_PUBLIC_ADMIN_EMAIL
-      ) {
-        router.replace("/");
-      }
-    }
-  }, [isSignedIn, user, router]);
 
-  if (!isUserLoaded) {
-    return <div>Loading....</div>;
-  }
+
   return (
 
       <div className="flex flex-col h-screen bg-gray-300">
