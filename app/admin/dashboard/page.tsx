@@ -1,10 +1,15 @@
 "use client";
+
+
 import { client } from "@/sanity/lib/client";
+import { SignedIn, SignOutButton } from "@clerk/clerk-react";
+import { useUser } from "@clerk/nextjs";
 import { groq } from "next-sanity";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { FaSquareCheck } from "react-icons/fa6";
 import { IoMdTrash } from "react-icons/io";
+import { PiSignOut } from "react-icons/pi";
 import { RiDashboardFill } from "react-icons/ri";
 import Swal from "sweetalert2";
 
@@ -40,7 +45,7 @@ const AdminDashboard = () => {
   const [selectOrderId, setSelectOrderId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
-const router = useRouter();
+
   useEffect(() => {
     client
       .fetch(
@@ -174,25 +179,25 @@ const router = useRouter();
     (order) => order.status === "pending"
   ).length;
 
-  // const { user, isSignedIn } = useUser();
-  // const router = useRouter();
-  // const [isUserLoaded, setIsUserLoaded] = useState(false);
-  // useEffect(() => {
-  //   if (isSignedIn && user) {
-  //     setIsUserLoaded(true);
-  //     if (
-  //       user &&
-  //       user.primaryEmailAddress?.emailAddress !==
-  //         process.env.NEXT_PUBLIC_ADMIN_EMAIL
-  //     ) {
-  //       router.replace("/");
-  //     }
-  //   }
-  // }, [isSignedIn, user, router]);
+  const { user, isSignedIn } = useUser();
+  const router = useRouter();
+  const [isUserLoaded, setIsUserLoaded] = useState(false);
+  useEffect(() => {
+    if (isSignedIn && user) {
+      setIsUserLoaded(true);
+      if (
+        user &&
+        user.primaryEmailAddress?.emailAddress !==
+          process.env.NEXT_PUBLIC_ADMIN_EMAIL
+      ) {
+        router.replace("/");
+      }
+    }
+  }, [isSignedIn, user, router]);
 
-  // if (!isUserLoaded) {
-  //   return <div>Loading....</div>;
-  // }
+  if (!isUserLoaded) {
+    return <div>Loading....</div>;
+  }
   return (
 
       <div className="flex flex-col h-screen bg-gray-300">
@@ -222,10 +227,7 @@ const router = useRouter();
               <p className="text-lg text-red-600">{pendingDeliveries}</p>
             </div>
           </div>
-          <div className="text-white">
-            <button className="" onClick={()=> router.push("/")}>Signout</button>
-          </div>
-          {/* <div>
+          <div>
             <SignedIn>
               <SignOutButton>
                 <button className="text-slate-800 flex items-center gap-2 bg-white py-2 px-3 rounded-md text-sm">
@@ -233,7 +235,7 @@ const router = useRouter();
                 </button>
               </SignOutButton>
             </SignedIn>
-          </div> */}
+          </div>
         </nav>
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           <h2 className="text-2xl font-bold text-center">Orders</h2>
