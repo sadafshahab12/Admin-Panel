@@ -1,10 +1,14 @@
 "use client";
-import ProtectedRoute from "@/app/components/protected/page";
 import { client } from "@/sanity/lib/client";
+import { SignedIn, SignOutButton } from "@clerk/clerk-react";
+import { useUser } from "@clerk/nextjs";
 import { groq } from "next-sanity";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { FaSquareCheck } from "react-icons/fa6";
 import { IoMdTrash } from "react-icons/io";
+import { PiSignOut } from "react-icons/pi";
+import { RiDashboardFill } from "react-icons/ri";
 import Swal from "sweetalert2";
 
 export type CartItem = {
@@ -39,6 +43,7 @@ const AdminDashboard = () => {
   const [selectOrderId, setSelectOrderId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
+
   useEffect(() => {
     client
       .fetch(
@@ -91,7 +96,7 @@ const AdminDashboard = () => {
 
   const toggleOrderDetails = (orderId: string) => {
     setSelectOrderId((prev) => (prev === orderId ? null : orderId));
-    console.log(selectOrderId)
+    console.log(selectOrderId);
   };
 
   const handleDeleteOrder = async (orderId: string, customerId?: string) => {
@@ -164,25 +169,70 @@ const AdminDashboard = () => {
     }
   };
 
+  const totalRevenue = orders.reduce((acc, order) => acc + order.totalPrice, 0);
+  const totalOrders = orders.length;
+  const totalCustomers = new Set(orders.map((order) => order.customer._id))
+    .size;
+  const pendingDeliveries = orders.filter(
+    (order) => order.status === "pending"
+  ).length;
+
+  const { user, isSignedIn } = useUser();
+  const router = useRouter();
+  const [isUserLoaded, setIsUserLoaded] = useState(false);
+  useEffect(() => {
+    if (isSignedIn && user) {
+      setIsUserLoaded(true);
+      if (
+        user &&
+        user.primaryEmailAddress?.emailAddress !==
+          process.env.NEXT_PUBLIC_ADMIN_EMAIL
+      ) {
+        router.replace("/");
+      }
+    }
+  }, [isSignedIn, user, router]);
+
+  if (!isUserLoaded) {
+    return <div>Loading....</div>;
+  }
   return (
-    <ProtectedRoute>
+
       <div className="flex flex-col h-screen bg-gray-300">
-        <nav className="flex justify-between bg-slate-800 p-5">
-          <h1 className="text-2xl text-white">Admin Dashboard</h1>
-          <div className="flex gap-4">
-            {["All", "Pending", "Completed", "Shipped", "Cancelled"].map(
-              (status) => (
-                <button
-                  key={status}
-                  className={`text-sm px-4 py-1 rounded-md transition-all ${
-                    filter === status ? "bg-blue-500 text-white" : "text-white"
-                  }`}
-                  onClick={() => setFilter(status)}
-                >
-                  {status}
+        <nav className="flex justify-between items-center bg-slate-800 p-5">
+          <div className="text-white">
+            <RiDashboardFill className="w-8 h-8" />
+            <h1 className="text-3xl font-bold ">Admin Dashboard</h1>
+          </div>
+
+          <div className="grid grid-cols-4 gap-4 p-5">
+            <div className="bg-white shadow-md p-4 text-center rounded-md">
+              <h2 className="text-lg font-bold">Total Revenue</h2>
+              <p className="text-lg text-green-600">
+                ${totalRevenue.toFixed(2)}
+              </p>
+            </div>
+            <div className="bg-white shadow-md p-4 text-center rounded-md">
+              <h2 className="text-lg font-bold">Total Orders</h2>
+              <p className="text-lg">{totalOrders}</p>
+            </div>
+            <div className="bg-white shadow-md p-4 text-center rounded-md">
+              <h2 className="text-lg font-bold">Total Customers</h2>
+              <p className="text-lg">{totalCustomers}</p>
+            </div>
+            <div className="bg-white shadow-md p-4 text-center rounded-md">
+              <h2 className="text-lg font-bold">Pending Deliveries</h2>
+              <p className="text-lg text-red-600">{pendingDeliveries}</p>
+            </div>
+          </div>
+          <div>
+            <SignedIn>
+              <SignOutButton>
+                <button className="text-slate-800 flex items-center gap-2 bg-white py-2 px-3 rounded-md text-sm">
+                  Signout <PiSignOut className="w-5 h-5" />
                 </button>
-              )
-            )}
+              </SignOutButton>
+            </SignedIn>
           </div>
         </nav>
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
@@ -196,17 +246,30 @@ const AdminDashboard = () => {
               className="w-full py-2 px-4 bg-transparent border  border-slate-500 rounded-md outline-none focus:shadow-md "
             />{" "}
           </div>
+          <div className="flex gap-4 bg-slate-800 p-2 rounded-md">
+            {["All", "Pending", "Completed", "Shipped", "Cancelled"].map(
+              (status) => (
+                <button
+                  key={status}
+                  className={`text-sm px-4 py-1 rounded-md transition-all ${
+                    filter === status ? "bg-white text-slate-800" : "text-white"
+                  }`}
+                  onClick={() => setFilter(status)}
+                >
+                  {status}
+                </button>
+              )
+            )}
+          </div>
           <div className="overflow-y-auto bg-white rounded-md shadow-md">
             <table className="w-full border border-gray-300 shadow-lg rounded-lg overflow-hidden">
               <thead>
-                <tr className="bg-gray-800 text-white text-center text-sm">
+                <tr className="bg-gray-800 text-white  text-sm">
                   <th className="p-4 border">Order ID</th>
                   <th className="p-4 border">Customer Name</th>
-                  <th className="p-4 border">Email</th>
-                  <th className="p-4 border">Phone</th>
                   <th className="p-4 border">Address</th>
                   <th className="p-4 border">Order Date</th>
-                  <th className="p-4 border">Total Price</th>
+                  <th className="p-4 border">Total Amount</th>
                   <th className="p-4 border">Status</th>
                   <th className="p-4 border">Actions</th>
                 </tr>
@@ -215,15 +278,18 @@ const AdminDashboard = () => {
                 {searchOrder().map((order) => (
                   <tr
                     key={order._id}
-                    className="cursor-pointer hover:bg-gray-100 transition-all text-center text-sm border"
+                    className="cursor-pointer hover:bg-gray-100 transition-all text-sm border"
                     onClick={() => toggleOrderDetails(order._id)}
                   >
                     <td className="p-4 border">{order._id}</td>
-                    <td className="p-4 border">
-                      {order.customer.firstName} {order.customer.lastName}
+                    <td className="p-4 border break-words">
+                      {order.customer.firstName} {order.customer.lastName}{" "}
+                      <br />
+                      {order.customer.email}
+                      <br />
+                      {order.customer.phone}
                     </td>
-                    <td className="p-4 border">{order.customer.email}</td>
-                    <td className="p-4 border">{order.customer.phone}</td>
+
                     <td className="p-4 border">
                       {order.customer.streetAddress}
                     </td>
@@ -282,7 +348,7 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
-    </ProtectedRoute>
+
   );
 };
 
