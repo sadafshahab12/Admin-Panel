@@ -1,79 +1,41 @@
 "use client";
 
 import { client } from "@/sanity/lib/client";
-import { groq } from "next-sanity";
 import Link from "next/link";
 
 import React, { useEffect, useState } from "react";
 import { FaSquareCheck } from "react-icons/fa6";
 import { IoMdTrash } from "react-icons/io";
-import { PiSignOut } from "react-icons/pi";
-import { RiDashboardFill } from "react-icons/ri";
+
 import { TiArrowBack } from "react-icons/ti";
 import Swal from "sweetalert2";
-
-export type CartItem = {
-  _id: string;
-  title: string;
-  price: number;
-  image: string;
-};
-
-export type Customer = {
-  _id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  streetAddress: string;
-};
-
-export type Order = {
-  _id: string;
-  _createdAt: string;
-  _updatedAt: string;
-  status: "pending" | "completed" | "shipped" | "cancelled";
-  totalPrice: number;
-  userId: string;
-  cartItems: CartItem[];
-  customer: Customer;
-};
+import { groqOrderQuery, Order } from "../data-types/data";
+import Loading from "../loading";
 
 const OrderPage = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectOrderId, setSelectOrderId] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<string>("All");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    client
-      .fetch(
-        groq`*[_type == "order"] {
-          _id,
-          _createdAt,
-          _updatedAt,
-          status,
-          totalPrice,
-          userId,
-          cartItems[] {
-            _id,
-            title,
-            price,
-            image
-          },
-          customer-> {
-            _id,
-            firstName,
-            lastName,
-            email,
-            phone,
-            streetAddress
-          }
-        }`
-      )
-      .then((data) => setOrders(data))
-      .catch((err) => console.error("Error in fetching orders", err));
+    const fetchOrders = async () => {
+      try {
+        const data = await client.fetch(groqOrderQuery);
+        setOrders(data);
+      } catch (err) {
+        console.error("Error in fetching orders", err);
+      } finally {
+        setTimeout(() => {
+          setLoading(false);
+        }, 1500);
+      }
+    };
+  
+    fetchOrders();
   }, []);
+  
 
   const filterOrders =
     filter === "All"
@@ -169,47 +131,11 @@ const OrderPage = () => {
       Swal.fire("Error!", "Failed to change status", "error");
     }
   };
-
-  const totalRevenue = orders.reduce((acc, order) => acc + order.totalPrice, 0);
-  const totalOrders = orders.length;
-  const totalCustomers = new Set(orders.map((order) => order.customer._id))
-    .size;
-  const pendingDeliveries = orders.filter(
-    (order) => order.status === "pending"
-  ).length;
-
+  if (loading) {
+    return <Loading />;
+  }
   return (
     <div className="flex flex-col h-screen bg-gray-300">
-      <nav className="flex justify-between items-center bg-slate-800 p-5">
-        <div className="text-white">
-          <RiDashboardFill className="w-8 h-8" />
-          <h1 className="text-3xl font-bold ">Admin Dashboard</h1>
-        </div>
-
-        <div className="grid grid-cols-4 gap-4 p-5">
-          <div className="bg-white shadow-md p-4 text-center rounded-md">
-            <h2 className="text-lg font-bold">Total Revenue</h2>
-            <p className="text-lg text-green-600">${totalRevenue.toFixed(2)}</p>
-          </div>
-          <div className="bg-white shadow-md p-4 text-center rounded-md">
-            <h2 className="text-lg font-bold">Total Orders</h2>
-            <p className="text-lg">{totalOrders}</p>
-          </div>
-          <div className="bg-white shadow-md p-4 text-center rounded-md">
-            <h2 className="text-lg font-bold">Total Customers</h2>
-            <p className="text-lg">{totalCustomers}</p>
-          </div>
-          <div className="bg-white shadow-md p-4 text-center rounded-md">
-            <h2 className="text-lg font-bold">Pending Deliveries</h2>
-            <p className="text-lg text-red-600">{pendingDeliveries}</p>
-          </div>
-        </div>
-        <Link href="/">
-          <button className="text-slate-800 flex items-center gap-2 bg-white py-2 px-3 rounded-md text-sm">
-            Signout <PiSignOut className="w-5 h-5" />
-          </button>
-        </Link>
-      </nav>
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
         <Link href="/admin/dashboard">
           <div className="w-10 h-10 flex justify-center items-center rounded-full bg-gray-400 cursor-pointer">
