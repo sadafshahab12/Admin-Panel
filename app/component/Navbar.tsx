@@ -1,9 +1,7 @@
 "use client";
 import { client } from "@/sanity/lib/client";
 import { groq } from "next-sanity";
-import Link from "next/link";
 import React, { useEffect, useState } from "react";
-import { PiSignOut } from "react-icons/pi";
 import { RiDashboardFill } from "react-icons/ri";
 import { usePathname } from "next/navigation";
 import { Order, RentalOrder } from "../data-types/data";
@@ -12,7 +10,6 @@ const Navbar = () => {
   const pathname = usePathname();
   const [orders, setOrders] = useState<Order[]>([]);
   const [rentalOrders, setRentalOrders] = useState<RentalOrder[]>([]);
-
   useEffect(() => {
     if (pathname === "/admin/dashboard" || pathname === "/order-page") {
       client
@@ -97,11 +94,7 @@ const Navbar = () => {
           <p className="text-lg text-red-600">{pendingDeliveries}</p>
         </div>
       </div>
-      <Link href="/">
-        <button className="text-slate-800 flex items-center gap-2 bg-white py-2 px-3 rounded-md text-sm">
-          Signout <PiSignOut className="w-5 h-5" />
-        </button>
-      </Link>
+   
     </nav>
   );
 };

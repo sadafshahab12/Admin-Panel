@@ -1,11 +1,5 @@
 "use client";
-// import {
-//   SignedIn,
-//   SignedOut,
-//   SignInButton,
-//   SignOutButton,
-//   useUser,
-// } from "@clerk/nextjs";
+
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
@@ -79,29 +73,3 @@ const AdminLogin = () => {
 };
 
 export default AdminLogin;
-// export default function AdminLogin() {
-//   const { user } = useUser();
-//   const router = useRouter();
-//   if (
-//     user &&
-//     user.primaryEmailAddress?.emailAddress === "sadafshahabsr12@gmail.com"
-//   ) {
-//     router.push("/admin/dashboard");
-//     return <div>Redirecting...</div>;
-//   }
-//   return (
-//     <div className="flex flex-col justify-center items-center h-screen bg-gray-200 gap-4">
-//       <h1 className="text-3xl font-bold">Admin Login</h1>
-//       <SignedOut>
-//         <SignInButton>
-//           <button className="py-2 px-4 text-sm bg-slate-800 rounded-md cursor-pointer text-white">
-//             Login with Clerk
-//           </button>
-//         </SignInButton>
-//       </SignedOut>
-//       <SignedIn>
-//         <SignOutButton>Sign Out</SignOutButton>
-//       </SignedIn>
-//     </div>
-//   );
-// }
